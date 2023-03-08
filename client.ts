@@ -24,13 +24,10 @@ client.on('data', (data) => {
     console.log(message);
 });
 
-// Define o que fazer quando o socket é desconectado
 client.on('end', () => {
     console.log('Desconectado do servidor.');
 });
 
-// Define o que fazer quando o usuário digita uma mensagem
 rl.on('line', (mensagem) => {
-    // Envia a mensagem para o servidor
     client.write(mensagem);
 });
