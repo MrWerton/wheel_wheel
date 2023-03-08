@@ -1,5 +1,5 @@
 
-import net from 'net';
+import net, {Socket} from 'net';
 
 type Room = {
     player1?: net.Socket;
@@ -8,6 +8,22 @@ type Room = {
 
 const rooms: Room[] = [];
 
+function jogar(socket1: Socket, socket2: Socket) {
+    
+    socket1.on('data', (data) => {
+      const mensagem = data.toString();
+      console.log(`Jogador 1 perguntou: ${mensagem}`);
+      socket2.write(`${socket1.remoteAddress} ${socket1.localPort}  ${data}`);
+    });
+  
+    
+    socket2.on('data', (data) => {
+      const mensagem = data.toString();
+      console.log(`Jogador 2 perguntou: ${mensagem}`);
+         socket1.write(`${socket2.remoteAddress} ${socket2.localPort} ${data}`);
+
+    });
+  }
 const server = net.createServer((socket) => {
     let joinedRoom = false;
 
@@ -21,42 +37,8 @@ const server = net.createServer((socket) => {
             break;
         } else if (!room.player2) {
             room.player2 = socket;
-            let isFirstPlayer = false;
-
-            if (isFirstPlayer) {
-                room.player1.on('data', (dt) => {
-                    const message = dt.toString().trim()
-
-                    if (message === 'Hello') {
-                        room.player2?.write("jogador 1 ganhou")
-                        room.player1?.write("voce ganhou")
-                    } else {
-                        room.player1?.write("voce errou \n")
-                        room.player2?.write("sua vez \n")
-                        isFirstPlayer = false;
-                    }
-                })
-            } else {
-                isFirstPlayer = true;
-                room.player2.on('data', (dt) => {
-
-                    const message = dt.toString().trim()
-
-                    if (message === 'Hello') {
-                        room.player1?.write("jogador 2 ganhou")
-                        room.player2?.write("voce ganhou")
-
-                    } else {
-                        room.player2?.write("voce errou\n")
-                        room.player1?.write("sua vez\n")
-
-
-                    }
-                })
-            }
-
-
             joinedRoom = true;
+            jogar(room.player1, room.player2);
             break;
         }
     }
@@ -68,9 +50,10 @@ const server = net.createServer((socket) => {
     }
 
     if (rooms[rooms.length - 1].player1 && rooms[rooms.length - 1].player2) {
-        rooms.push({}); // create a new empty room for future clients
+        rooms.push({}); 
 
         rooms[rooms.length - 2].player1?.write('Opponent founded! \n');
+        rooms[rooms.length - 2].player1?.write('faça uma pergunta! \n');
         rooms[rooms.length - 2].player2?.write('Opponent founded! !\n');
     }
 

@@ -15,7 +15,7 @@ const client = net.createConnection({ port: PORT }, () => {
          client.write(`name:${name}`);
      }); */
     rl.on('line', (data) => {
-        client.write(`name:${data}`);
+        client.write(`${data}`);
     });
 });
 
@@ -28,6 +28,4 @@ client.on('end', () => {
     console.log('Desconectado do servidor.');
 });
 
-rl.on('line', (mensagem) => {
-    client.write(mensagem);
-});
+
