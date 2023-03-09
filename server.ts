@@ -1,83 +1,197 @@
+import net, { Socket } from 'net';
 
-import net from 'net';
+class Player {
+    constructor(public name: string | null, public socket: Socket, public points: number) { }
 
-type Room = {
-    player1?: net.Socket;
-    player2?: net.Socket;
-};
+    public getName(): string | null {
+        return this?.name;
+    }
 
-const rooms: Room[] = [];
+    public closeConnection() {
+        this.socket.end()
+    }
 
-const server = net.createServer((socket) => {
-    let joinedRoom = false;
 
-    for (let i = 0; i < rooms.length; i++) {
-        const room = rooms[i];
+    public notify(msg: string) {
+        this.socket.write(`\n${msg}\n`)
+    }
+}
 
-        if (!room.player1) {
-            room.player1 = socket;
-            socket.write('Waiting for opponent...\n');
-            joinedRoom = true;
-            break;
-        } else if (!room.player2) {
-            room.player2 = socket;
-            let isFirstPlayer = false;
+class Gamer {
+    private _phases = [{ name: 'hello', tip: 'é a traduzido para ola' }, { name: 'world', tip: 'é a traduzido para mundo' }];
+    private currentPhrase;
+    private board: string[] = [];
+    constructor(private playerOne: Player, private playerTwo: Player) {
+        this.currentPhrase = this.getRandomWord();
+        this.board = this._createBoard();
+    }
 
-            if (isFirstPlayer) {
-                room.player1.on('data', (dt) => {
-                    const message = dt.toString().trim()
 
-                    if (message === 'Hello') {
-                        room.player2?.write("jogador 1 ganhou")
-                        room.player1?.write("voce ganhou")
-                    } else {
-                        room.player1?.write("voce errou \n")
-                        room.player2?.write("sua vez \n")
-                        isFirstPlayer = false;
-                    }
-                })
+    public showBoard() {
+        this.playerOne.notify(`\nboard: ${this.board.toString()}`)
+        this.playerTwo.notify(`\nboard: ${this.board.toString()}`)
+    }
+    public showPoints() {
+        this.playerOne.notify(`you ${this.playerOne.points.toString()} \n player two ${this.playerTwo.points.toString()}\n`)
+        this.playerTwo.notify(`you ${this.playerOne.points.toString()} \n player one ${this.playerTwo.points.toString()}\n`)
+    }
+    private _createBoard(): string[] {
+        const chars = this.currentPhrase.name.trim().split("");
+        const board: string[] = chars.map((_) => '[]');
+
+        return board;
+    }
+
+    public verifyIfHasWin() {
+        const word = this.currentPhrase.name;
+        const wordOfBoard = this.board.join("")
+        return word === wordOfBoard;
+    }
+
+    private _changeBoardForShowLetter(char: string) {
+        const word = this.currentPhrase.name;
+
+        for (let i in this.board) {
+            if (word[i] === char) {
+                this.board[i] = word[i];
+            }
+        }
+    }
+
+
+    private getRandomWord() {
+        const randomIndex = Math.floor(Math.random() * this._phases.length);
+        return this._phases[randomIndex];
+    }
+
+    private _verifyIfUserGuessedChar(char: string) {
+        if (this.currentPhrase.name.includes(char)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public start(): void {
+        this.playerOne.notify('Opponent found!\n Voce é o jogador 1\n');
+        this.playerTwo.notify("Voce é o jogador 2")
+        this.showBoard();
+        this.playerOne.notify(`tip: ${this.currentPhrase.tip}`)
+        this.playerTwo.notify(`tip: ${this.currentPhrase.tip}`)
+
+        this.playerOne.socket.write("De acordo com a dica, qual é a palavra? ")
+
+
+        this.playerTwo.socket.write('\nJogador 1 inicia respondendo\n')
+
+        this.playerOne.socket.on('data', (data) => {
+            const result = this._verifyIfUserGuessedChar(data.toString())
+            if (result) {
+                this._changeBoardForShowLetter(data.toString())
+                this.playerOne.notify("Voce acertou");
+                this.playerOne.points++;
+                this.showPoints()
+                if (this.verifyIfHasWin()) {
+                    this.playerOne.notify("Você venceu\n")
+                    this.playerTwo.notify("Você perdeu\n")
+                    this.playerTwo.closeConnection();
+                    this.playerOne.closeConnection()
+                    return;
+                }
+                this.showBoard();
+                this.playerOne.notify("Informe outra palavra\n");
+
             } else {
-                isFirstPlayer = true;
-                room.player2.on('data', (dt) => {
+                this.playerOne.notify("Voce errou");
+                this.showBoard();
+                this.playerTwo.notify("sua vez, jogador 2");
+            }
 
-                    const message = dt.toString().trim()
+        });
 
-                    if (message === 'Hello') {
-                        room.player1?.write("jogador 2 ganhou")
-                        room.player2?.write("voce ganhou")
+        this.playerTwo.socket.on('data', (data) => {
+            const result = this._verifyIfUserGuessedChar(data.toString())
+            if (result) {
+                this._changeBoardForShowLetter(data.toString())
+                this.playerTwo.socket.write("Voce acertou\n");
+                this.playerTwo.points++;
+                this.showPoints()
 
-                    } else {
-                        room.player2?.write("voce errou\n")
-                        room.player1?.write("sua vez\n")
+                if (this.verifyIfHasWin()) {
+                    this.playerTwo.socket.write("Você venceu")
+                    this.playerOne.socket.write("Você perdeu")
+                    this.playerOne.socket.end()
+                    this.playerTwo.socket.end()
+                    return;
+                }
+                this.showBoard();
+                this.playerTwo.notify("informe outra palavra\n");
 
+            } else {
 
-                    }
-                })
+                this.playerTwo.notify("Voce errou");
+                this.showBoard();
+                this.playerOne.notify("Sua vez");
+
             }
 
 
-            joinedRoom = true;
+
+        });
+    }
+}
+
+class Channel {
+    private _player1: Player | null = null;
+    private _player2: Player | null = null;
+
+    public addUser(user: Player): boolean {
+        if (!this._player1) {
+            this._player1 = user;
+            this._player1.notify(` aguardando outro player...!\n`);
+            return true;
+        } else if (!this._player2) {
+            this._player2 = user;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public startGamer(): void {
+        if (this._player1 && this._player2) {
+            const gamer = new Gamer(this._player1, this._player2);
+            gamer.start();
+        }
+    }
+}
+
+const channels: Channel[] = [];
+
+const server = net.createServer((socket) => {
+    let channelIsOpen = null;
+
+    for (let i in channels) {
+        const channel = channels[i];
+        const userWasAdded = channel.addUser(new Player(null, socket, 0));
+        if (userWasAdded) {
+            channelIsOpen = channel;
             break;
         }
     }
 
-    if (!joinedRoom) {
-        const room = { player1: socket };
-        rooms.push(room);
-        socket.write('Waiting for opponent...\n');
+    if (!channelIsOpen) {
+        channelIsOpen = new Channel();
+        channels.push(channelIsOpen);
+        channelIsOpen.addUser(new Player(null, socket, 0));
     }
 
-    if (rooms[rooms.length - 1].player1 && rooms[rooms.length - 1].player2) {
-        rooms.push({}); // create a new empty room for future clients
+    channelIsOpen.startGamer();
 
-        rooms[rooms.length - 2].player1?.write('Opponent founded! \n');
-        rooms[rooms.length - 2].player2?.write('Opponent founded! !\n');
-    }
-
-    socket.on('data', (data) => {
-    });
+    socket.on('data', (data) => { });
 
     socket.on('end', () => {
+
     });
 });
 

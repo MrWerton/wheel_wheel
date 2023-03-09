@@ -8,7 +8,9 @@
     "client": "tsnd ./client.ts"
   },
   "dependencies": {
+    "@types/express": "^4.17.17",
     "@types/node": "^18.14.6",
+    "express": "^4.18.2",
     "ts-node-dev": "^2.0.0",
     "typescript": "^4.9.5"
   }

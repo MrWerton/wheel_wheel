@@ -1,3 +1,4 @@
+
 import net from 'net';
 import readline from 'readline';
 
@@ -9,13 +10,9 @@ const rl = readline.createInterface({
 });
 
 const client = net.createConnection({ port: PORT }, () => {
-    console.log('connecting in server.');
 
-    /*  rl.question('what's your username? ', (name) => {
-         client.write(`name:${name}`);
-     }); */
     rl.on('line', (data) => {
-        client.write(`name:${data}`);
+        client.write(`${data}`);
     });
 });
 
@@ -26,8 +23,4 @@ client.on('data', (data) => {
 
 client.on('end', () => {
     console.log('Desconectado do servidor.');
-});
-
-rl.on('line', (mensagem) => {
-    client.write(mensagem);
 });
