@@ -22,7 +22,7 @@ class Gamer {
     private currentWord;
     private board: string[] = [];
     constructor(private playerOne: Player, private playerTwo: Player) {
-        this.currentWord = this.getRandomWord();
+        this.currentWord = this._getRandomWord();
         this.board = this._createBoard();
     }
 
@@ -59,7 +59,7 @@ class Gamer {
     }
 
 
-    private getRandomWord() {
+    private _getRandomWord() {
         const randomIndex = Math.floor(Math.random() * this._phases.length);
         return this._phases[randomIndex];
     }
