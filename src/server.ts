@@ -146,11 +146,11 @@ class Channel {
     private _player2: Player | null = null;
 
     public addUser(user: Player): boolean {
-        if (!this._player1) {
+        if (this._player1 === null) {
             this._player1 = user;
             this._player1.notify(` aguardando outro player...!\n`);
             return true;
-        } else if (!this._player2) {
+        } else if (this._player2 === null) {
             this._player2 = user;
             return true;
         } else {
