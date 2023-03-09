@@ -169,7 +169,7 @@ class Channel {
 const channels: Channel[] = [];
 
 const server = net.createServer((socket) => {
-    let channelOpen = null;
+    let channelOpen: Channel | null = null;
 
     for (let i in channels) {
         const channel = channels[i];
