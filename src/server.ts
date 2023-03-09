@@ -18,7 +18,7 @@ class Player {
 }
 
 class Gamer {
-    private _phases = [{ name: 'hello', tip: 'é a traduzido para ola' }, { name: 'world', tip: 'é a traduzido para mundo' }];
+    private _questions = [{ name: 'hello', tip: 'é a traduzido para ola' }, { name: 'world', tip: 'é a traduzido para mundo' }];
     private currentWord;
     private board: string[] = [];
     constructor(private playerOne: Player, private playerTwo: Player) {
@@ -60,8 +60,8 @@ class Gamer {
 
 
     private _getRandomWord() {
-        const randomIndex = Math.floor(Math.random() * this._phases.length);
-        return this._phases[randomIndex];
+        const randomIndex = Math.floor(Math.random() * this._questions.length);
+        return this._questions[randomIndex];
     }
 
     private _verifyIfUserGuessedChar(char: string) {
