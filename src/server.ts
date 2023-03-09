@@ -169,24 +169,24 @@ class Channel {
 const channels: Channel[] = [];
 
 const server = net.createServer((socket) => {
-    let channelIsOpen = null;
+    let channelOpen = null;
 
     for (let i in channels) {
         const channel = channels[i];
         const userWasAdded = channel.addUser(new Player(null, socket, 0));
         if (userWasAdded) {
-            channelIsOpen = channel;
+            channelOpen = channel;
             break;
         }
     }
 
-    if (!channelIsOpen) {
-        channelIsOpen = new Channel();
-        channels.push(channelIsOpen);
-        channelIsOpen.addUser(new Player(null, socket, 0));
+    if (channelOpen === null) {
+        channelOpen = new Channel();
+        channels.push(channelOpen);
+        channelOpen.addUser(new Player(null, socket, 0));
     }
 
-    channelIsOpen.startGamer();
+    channelOpen.startGamer();
 
     socket.on('data', (data) => { });
 
