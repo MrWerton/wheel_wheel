@@ -33,7 +33,7 @@ class Gamer {
     }
     public showPoints() {
         this.playerOne.notify(`you ${this.playerOne.points.toString()} \n player two ${this.playerTwo.points.toString()}\n`)
-        this.playerTwo.notify(`you ${this.playerOne.points.toString()} \n player one ${this.playerTwo.points.toString()}\n`)
+        this.playerTwo.notify(`you ${this.playerTwo.points.toString()} \n player one ${this.playerOne.points.toString()}\n`)
     }
     private _createBoard(): string[] {
         const chars = this.currentPhrase.name.trim().split("");
@@ -73,13 +73,13 @@ class Gamer {
     }
 
     public start(): void {
-        this.playerOne.notify('Opponent found!\n Voce é o jogador 1\n');
+        this.playerOne.notify('Jogador 2 encontrado!\n Voce será o jogador 1\n');
         this.playerTwo.notify("Voce é o jogador 2")
         this.showBoard();
         this.playerOne.notify(`tip: ${this.currentPhrase.tip}`)
         this.playerTwo.notify(`tip: ${this.currentPhrase.tip}`)
 
-        this.playerOne.socket.write("De acordo com a dica, qual é a palavra? ")
+        this.playerOne.socket.write("De acordo com a dica, informe uma letra? ")
 
 
         this.playerTwo.socket.write('\nJogador 1 inicia respondendo\n')
@@ -99,7 +99,7 @@ class Gamer {
                     return;
                 }
                 this.showBoard();
-                this.playerOne.notify("Informe outra palavra\n");
+                this.playerOne.notify("Informe outra letra\n");
 
             } else {
                 this.playerOne.notify("Voce errou");
@@ -125,7 +125,7 @@ class Gamer {
                     return;
                 }
                 this.showBoard();
-                this.playerTwo.notify("informe outra palavra\n");
+                this.playerTwo.notify("informe outra letra\n");
 
             } else {
 
