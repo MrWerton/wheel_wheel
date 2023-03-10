@@ -1,4 +1,5 @@
 import net, { Socket } from 'net';
+import { isALetter } from '../responseFilter';
 
 class Player {
     constructor(public name: string | null, public socket: Socket, public points: number) { }
@@ -18,7 +19,7 @@ class Player {
 }
 
 class Gamer {
-    private _questions = [{ name: 'hello', tip: 'é a traduzido para ola' }, { name: 'world', tip: 'é a traduzido para mundo' }];
+    private _questions = [{ name: 'hello', tip: 'é a traduzido para ola' }, { name: 'world', tip: 'é a traduzido para mundo' }, { name: 'burocracia', tip: 'Quando algo possui o complexidade maior do que a necessária' }, { name: 'bumerangue', tip: 'Aquilo que você joga fora e tenta voltar pra você' }, { name: "ritmo", tip: "O que falta pra você começar a dançar bem" }];
     private currentWord;
     private board: string[] = [];
     constructor(private playerOne: Player, private playerTwo: Player) {
@@ -85,54 +86,65 @@ class Gamer {
         this.playerTwo.socket.write('\nJogador 1 inicia respondendo\n')
 
         this.playerOne.socket.on('data', (data) => {
-            const result = this._verifyIfUserGuessedChar(data.toString())
-            if (result) {
-                this._changeBoardForShowChar(data.toString())
-                this.playerOne.notify("Voce acertou");
-                this.playerOne.points++;
-                this.showPoints()
-                if (this.verifyIfHasWin()) {
-                    this.playerOne.notify("Você venceu\n")
-                    this.playerTwo.notify("Você perdeu\n")
-                    this.playerTwo.closeConnection();
-                    this.playerOne.closeConnection()
-                    return;
-                }
-                this.showBoard();
-                this.playerOne.notify("Informe outra letra\n");
+            if (isALetter(data.toString())) {
+                const result = this._verifyIfUserGuessedChar(data.toString())
+                if (result) {
+                    this._changeBoardForShowChar(data.toString())
+                    this.playerOne.notify("Voce acertou");
+                    this.playerOne.points++;
+                    this.showPoints()
+                    if (this.verifyIfHasWin()) {
+                        this.playerOne.notify("Você venceu\n")
+                        this.playerTwo.notify("Você perdeu\n")
+                        this.playerTwo.closeConnection();
+                        this.playerOne.closeConnection()
+                        return;
+                    }
+                    this.showBoard();
+                    this.playerOne.notify("Informe outra letra\n");
 
+                } else {
+                    this.playerOne.notify("Voce errou");
+                    this.showBoard();
+                    this.playerTwo.notify("sua vez, jogador 2");
+                }
             } else {
-                this.playerOne.notify("Voce errou");
-                this.showBoard();
-                this.playerTwo.notify("sua vez, jogador 2");
+                this.playerOne.notify("Você não digitou uma letra válida ")
+                this.playerOne.notify("Digite novamente")
             }
+            
 
         });
 
         this.playerTwo.socket.on('data', (data) => {
-            const result = this._verifyIfUserGuessedChar(data.toString())
-            if (result) {
-                this._changeBoardForShowChar(data.toString())
-                this.playerTwo.socket.write("Voce acertou\n");
-                this.playerTwo.points++;
-                this.showPoints()
-
-                if (this.verifyIfHasWin()) {
-                    this.playerTwo.socket.write("Você venceu")
-                    this.playerOne.socket.write("Você perdeu")
-                    this.playerOne.socket.end()
-                    this.playerTwo.socket.end()
-                    return;
+            if (isALetter(data.toString())) {
+                const result = this._verifyIfUserGuessedChar(data.toString())
+                if (result) {
+                    this._changeBoardForShowChar(data.toString())
+                    this.playerTwo.socket.write("Voce acertou\n");
+                    this.playerTwo.points++;
+                    this.showPoints()
+    
+                    if (this.verifyIfHasWin()) {
+                        this.playerTwo.socket.write("Você venceu")
+                        this.playerOne.socket.write("Você perdeu")
+                        this.playerOne.socket.end()
+                        this.playerTwo.socket.end()
+                        return;
+                    }
+                    this.showBoard();
+                    this.playerTwo.notify("informe outra letra\n");
+    
+                } else {
+    
+                    this.playerTwo.notify("Voce errou");
+                    this.showBoard();
+                    this.playerOne.notify("Sua vez");
+    
                 }
-                this.showBoard();
-                this.playerTwo.notify("informe outra letra\n");
-
             } else {
-
-                this.playerTwo.notify("Voce errou");
-                this.showBoard();
-                this.playerOne.notify("Sua vez");
-
+                this.playerTwo.notify("Você não digitou uma letra válida ")
+                this.playerTwo.notify("Digite novamente")
             }
 
 
