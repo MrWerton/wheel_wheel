@@ -19,7 +19,7 @@ class Player {
 }
 
 class Gamer {
-    private _questions = [{ name: 'hello', tip: 'é a traduzido para ola' }, { name: 'world', tip: 'é a traduzido para mundo' }, { name: 'burocracia', tip: 'Quando algo possui o complexidade maior do que a necessária' }, { name: 'bumerangue', tip: 'Aquilo que você joga fora e tenta voltar pra você' }, { name: "ritmo", tip: "O que falta pra você começar a dançar bem" }];
+    private _questions = [{ name: 'burocracia', tip: 'Quando algo possui o complexidade maior do que a necessária' }, { name: 'bumerangue', tip: 'Aquilo que você joga fora e tenta voltar pra você' }, { name: "ritmo", tip: "O que falta pra você começar a dançar bem" }];
     private currentWord;
     private board: string[] = [];
     constructor(private playerOne: Player, private playerTwo: Player) {
@@ -112,7 +112,7 @@ class Gamer {
                 this.playerOne.notify("Você não digitou uma letra válida ")
                 this.playerOne.notify("Digite novamente")
             }
-            
+
 
         });
 
@@ -124,7 +124,7 @@ class Gamer {
                     this.playerTwo.socket.write("Voce acertou\n");
                     this.playerTwo.points++;
                     this.showPoints()
-    
+
                     if (this.verifyIfHasWin()) {
                         this.playerTwo.socket.write("Você venceu")
                         this.playerOne.socket.write("Você perdeu")
@@ -134,13 +134,13 @@ class Gamer {
                     }
                     this.showBoard();
                     this.playerTwo.notify("informe outra letra\n");
-    
+
                 } else {
-    
+
                     this.playerTwo.notify("Voce errou");
                     this.showBoard();
                     this.playerOne.notify("Sua vez");
-    
+
                 }
             } else {
                 this.playerTwo.notify("Você não digitou uma letra válida ")
