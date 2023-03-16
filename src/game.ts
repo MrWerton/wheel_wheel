@@ -1,28 +1,35 @@
+import { Roulette } from './roullete';
 import { Player } from "./player";
 import { isALetter } from "./utils/responseFilter";
 import { questionsDB } from "./utils/words";
+import { count } from 'console';
 
 class Game {
     private _questions = questionsDB;
     private currentWord;
+    private isFirstPlayerTurn;
     private board: string[] = [];
+    private calledLetters: string[] = [];
+    private roulette: Roulette = new Roulette();
+
     constructor(private playerOne: Player, private playerTwo: Player) {
         this.currentWord = this._getRandomWord();
         this.board = this._createBoard();
+        this.isFirstPlayerTurn = true;
     }
 
 
     public showBoard() {
-        this.playerOne.notify(`\nboard: ${this.board.toString()}`)
-        this.playerTwo.notify(`\nboard: ${this.board.toString()}`)
+        this.playerOne.notify(`\nPainel: ${this.board.join(' ')}`)
+        this.playerTwo.notify(`\nPainel: ${this.board.join(' ')}`)
     }
     public showPoints() {
-        this.playerOne.notify(`you ${this.playerOne.points.toString()} \n player two ${this.playerTwo.points.toString()}\n`)
-        this.playerTwo.notify(`you ${this.playerTwo.points.toString()} \n player one ${this.playerOne.points.toString()}\n`)
+        this.playerOne.notify(`\nyou ${this.playerOne.points.toString()} \n player two ${this.playerTwo.points.toString()}\n`)
+        this.playerTwo.notify(`\nyou ${this.playerTwo.points.toString()} \n player one ${this.playerOne.points.toString()}\n`)
     }
     private _createBoard(): string[] {
         const chars = this.currentWord.name.trim().split("");
-        const board: string[] = chars.map((_) => '[]');
+        const board: string[] = chars.map((_) => '_');
 
         return board;
     }
@@ -37,7 +44,7 @@ class Game {
         const word = this.currentWord.name;
 
         for (let i in this.board) {
-            if (word[i] === char) {
+            if (word[i] === char.toLowerCase()) {
                 this.board[i] = word[i];
             }
         }
@@ -51,9 +58,9 @@ class Game {
 
     private _verifyIfUserGuessedChar(char: string) {
         if (this.currentWord.name.includes(char)) {
-            return true;
+            return this.currentWord.name.split(char).length -1;
         } else {
-            return false;
+            return 0;
         }
     }
 
@@ -61,18 +68,26 @@ class Game {
         this.playerOne.notify('Jogador 2 encontrado!\n Voce será o jogador 1\n');
         this.playerTwo.notify("Voce é o jogador 2")
         this.showBoard();
-        this.playerOne.notify(`tip: ${this.currentWord.tip}`)
-        this.playerTwo.notify(`tip: ${this.currentWord.tip}`)
+        this.playerOne.notify(`Pista: ${this.currentWord.tip}`)
+        this.playerTwo.notify(`Pista: ${this.currentWord.tip}`)
 
-        this.playerOne.socket.write("De acordo com a dica, informe uma letra? ")
-
-
+        // let score = this.roulette.spin();
+        
+        this.playerOne.socket.write(`Uma letra por favor: `)
+        
+        
         this.playerTwo.socket.write('\nJogador 1 inicia respondendo\n')
-
+        
         this.playerOne.socket.on('data', (data) => {
-            if (isALetter(data.toString())) {
-                const result = this._verifyIfUserGuessedChar(data.toString())
-                if (result) {
+            // let score = this.roulette.spin();
+            if(!this.isFirstPlayerTurn) {
+                this.playerOne.socket.write('Espere a sua vez')
+                return
+            }
+            if (isALetter(data.toString())  && !this.calledLetters.includes(data.toString())) {
+                this.calledLetters.push(data.toString())
+                const result = this._verifyIfUserGuessedChar(data.toString().toLowerCase())
+                if (result != 0) {
                     this._changeBoardForShowChar(data.toString())
                     this.playerOne.notify("Voce acertou");
                     this.playerOne.points++;
@@ -85,55 +100,80 @@ class Game {
                         return;
                     }
                     this.showBoard();
-                    this.playerOne.notify("Informe outra letra\n");
-
+                    this.playerOne.notify(`Iinforme outra letra\n`);
+                    // let score = this.roulette.spin();
+                    
                 } else {
                     this.playerOne.notify("Voce errou");
                     this.showBoard();
                     this.playerTwo.notify("sua vez, jogador 2");
+                    this.isFirstPlayerTurn = !this.isFirstPlayerTurn;
                 }
             } else {
-                this.playerOne.notify("Você não digitou uma letra válida ")
-                this.playerOne.notify("Digite novamente")
+                if(this.calledLetters.includes(data.toString())) {
+                    this.playerOne.notify("A letra informada já foi chamada!")
+                } else {
+                    this.playerOne.notify("Você não digitou uma letra válida ")
+                }
+                this.playerOne.notify("Digite novamente:")
             }
-
-
+            
+            
         });
-
+        
         this.playerTwo.socket.on('data', (data) => {
-            if (isALetter(data.toString())) {
-                const result = this._verifyIfUserGuessedChar(data.toString())
-                if (result) {
+            if(this.isFirstPlayerTurn) {
+                this.playerTwo.socket.write('Espere a sua vez')
+                return
+            }
+            // // let score = this.roulette.spin();
+            // if(score == -1) {
+            //     this.playerTwo.notify('Perdeu tudo!');
+            //     this.playerTwo.points = 0;
+            //     return
+            // }
+            // if(score == 0) {
+            //     this.playerTwo.notify('Passou a vez!');
+            //     return
+            // }
+            if (isALetter(data.toString())  && !this.calledLetters.includes(data.toString())) {
+                this.calledLetters.push(data.toString())
+                const result = this._verifyIfUserGuessedChar(data.toString().toLowerCase())
+                if (result != 0) {
                     this._changeBoardForShowChar(data.toString())
-                    this.playerTwo.socket.write("Voce acertou\n");
+                    this.playerTwo.notify("Voce acertou");
                     this.playerTwo.points++;
                     this.showPoints()
-
                     if (this.verifyIfHasWin()) {
-                        this.playerTwo.socket.write("Você venceu")
-                        this.playerOne.socket.write("Você perdeu")
-                        this.playerOne.socket.end()
-                        this.playerTwo.socket.end()
+                        this.playerTwo.notify("Você venceu\n")
+                        this.playerOne.notify("Você perdeu\n")
+                        this.playerOne.closeConnection();
+                        this.playerTwo.closeConnection()
                         return;
                     }
                     this.showBoard();
-                    this.playerTwo.notify("informe outra letra\n");
-
+                    // score = this.roulette.spin();
+                    this.playerTwo.notify(`Informe outra letra\n`);
+                    
                 } else {
-
                     this.playerTwo.notify("Voce errou");
                     this.showBoard();
-                    this.playerOne.notify("Sua vez");
-
+                    this.playerOne.notify("sua vez, jogador 1");
+                    this.isFirstPlayerTurn = !this.isFirstPlayerTurn;
                 }
             } else {
-                this.playerTwo.notify("Você não digitou uma letra válida ")
-                this.playerTwo.notify("Digite novamente")
+                if(this.calledLetters.includes(data.toString())) {
+                    this.playerTwo.notify("A letra informada já foi chamada!")
+                } else {
+                    this.playerTwo.notify("Você não digitou uma letra válida ")
+                }
+                this.playerTwo.notify("Digite novamente:")
             }
-
-
-
+            
+            
         });
+        
+        
     }
 }
 
