@@ -24,7 +24,10 @@ const server = net.createServer((socket) => {
 
     channelOpened.startGamer();
 
-    socket.on('data', (data) => { });
+    socket.on('data', (data) => {
+
+
+    });
 
     socket.on('end', () => {
 

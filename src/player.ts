@@ -6,7 +6,9 @@ class Player {
     getName(): string | null {
         return this?.name;
     }
-
+    setName(name: string) {
+        this.name = name;
+    }
     closeConnection() {
         this.socket.end()
     }
@@ -17,4 +19,4 @@ class Player {
     }
 }
 
-export {Player}
+export { Player };
